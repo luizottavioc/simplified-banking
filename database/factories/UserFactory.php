@@ -23,22 +23,16 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $typeUser = fake()->numberBetween(2, 3);
+
         return [
             'name' => fake()->name(),
+            'cpf' => $typeUser === 3 ? fake()->numberBetween(100000000, 999999999) : null,
+            'cnpj' => $typeUser === 2 ? fake()->numberBetween(10000000000000, 99999999999999) : null,
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'password' => bcrypt('password'),
+            'user_type_id' => fake()->numberBetween(2, 3),
+            'wallet' => fake()->numberBetween(0, 100000),
         ];
-    }
-
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
     }
 }

@@ -12,7 +12,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        $this->call(\Database\Seeders\UserTypesSeeder::class);
+        $this->call(\Database\Seeders\UserSeeder::class);
+
+        $env = env('APP_ENV');
+        if ($env !== 'local') return;
+
+        \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([
         //     'name' => 'Test User',

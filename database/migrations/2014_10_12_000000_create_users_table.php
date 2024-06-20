@@ -14,11 +14,15 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('cpf', 14)->unique()->nullable();
+            $table->string('cnpj', 18)->unique()->nullable();
+            $table->string('email', 100)->unique();
             $table->string('password');
-            $table->rememberToken();
+            $table->unsignedBigInteger('user_type_id')->nullable(false);
+            $table->foreign('user_type_id')->references('id')->on('user_types');
+            $table->integer('wallet')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
