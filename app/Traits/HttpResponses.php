@@ -49,7 +49,7 @@ trait HttpResponses
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function respondWithToken(string $token, JsonResource $userData)
+    public function respondWithToken(string $token, JsonResource $userData, int $statusCode = 200)
     {
         $dataToken = [
             'access_token' => $token,
@@ -57,6 +57,6 @@ trait HttpResponses
             'user' => $userData
         ];
 
-        return response()->json(['data' => $dataToken], 200);
+        return $this->response('User authenticated', $statusCode, $dataToken);
     }
 }

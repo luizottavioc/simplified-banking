@@ -26,6 +26,14 @@ class AuthController extends Controller
             $hasCpf = !empty($userData['cpf']);
             $hasCnpj = !empty($userData['cnpj']);
 
+            if(!$hasCpf && !$hasCnpj) {
+                return $this->error(
+                    'Error on create user',
+                    422,
+                    ['cpf or cnpj is required']
+                );
+            }
+
             if ($hasCpf && $hasCnpj) {
                 return $this->error(
                     'Error on create user',
@@ -50,7 +58,7 @@ class AuthController extends Controller
             $token = auth()->tokenById($user->id);
             $userTreated = new UserResource($user);
 
-            return $this->respondWithToken($token, $userTreated);
+            return $this->respondWithToken($token, $userTreated, 201);
         } catch (\Throwable $th) {
             return $this->error('Unexpected error on create user!', 500);
         }
@@ -81,7 +89,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function me()
+    public function getMe()
     {
         $user = auth()->user();
         if (!$user) {
