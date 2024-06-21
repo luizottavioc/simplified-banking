@@ -12,9 +12,9 @@ trait HttpResponses
      *
      * @param  string  $message custom message to be returned
      * @param  string|int  $statusCode request status code
-     * @param  Illuminate\Database\Eloquent\Model|Illuminate\Http\Resources\Json\JsonResource|array $data data to be returned
+     * @param  \Illuminate\Database\Eloquent\Model|\Illuminate\Http\Resources\Json\JsonResource|array $data data to be returned
      *
-     * @return \Illuminate\Http\Response|\Illuminate\Contracts\Routing\ResponseFactory
+     * @return \Illuminate\Http\JsonResponse
      */
     public function response(string $message, string|int $statusCode, Model|JsonResource|array $data = [])
     {
@@ -31,7 +31,7 @@ trait HttpResponses
      * @param  string|int  $statusCode request status code
      * @param  array $errors errors to be returned
      *
-     * @return \Illuminate\Http\Response|\Illuminate\Contracts\Routing\ResponseFactory
+     * @return \Illuminate\Http\JsonResponse
      */
     public function error(string $message, string|int $statusCode, array $errors = [])
     {
@@ -41,15 +41,22 @@ trait HttpResponses
         ], $statusCode);
     }
 
-    public function respondWithToken($token, $userData)
+    /**
+     * Return a default user auth with token
+     *
+     * @param  string  $token token to be returned
+     * @param  JsonResource $userData user data to be returned
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function respondWithToken(string $token, JsonResource $userData)
     {
-        return response()->json([
-            'data' => [
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'expires_in' => auth()->factory()->getTTL() * 60, // 60 minutes
-                'user' => $userData
-            ]
-        ], 200);
+        $dataToken = [
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $userData
+        ];
+
+        return response()->json(['data' => $dataToken], 200);
     }
 }
