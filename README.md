@@ -1,10 +1,12 @@
 # Simplified Banking
 
-Follow these steps to run the project locally:
+## Users
+- 
+
+## Steps to run the project locally
 - Setup .env: ```cv .env.example .env```
 - Setup docker: ```docker compose up -d```
-- Access app container: ```docker compose exec app bash```
-- At the container:
+- Access app container: ```docker compose exec app bash```. At the container:
     - run migrations + seeds: ```php artisan migrate:fresh --seed```
     - generate a jwt secret: ```php artisan jwt:secret```
     - run tests: ```php artisan test```

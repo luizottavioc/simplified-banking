@@ -18,6 +18,10 @@ class UserTypesSeeder extends Seeder
         ]);
 
         DB::table('user_types')->insert([
+            'type' => 'teller',
+        ]);
+
+        DB::table('user_types')->insert([
             'type' => 'merchant',
         ]);
 

@@ -90,6 +90,16 @@ class AuthControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_login_teller(): void
+    {
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'teller@teller.com',
+            'password' => 'teller',
+        ]);
+
+        $response->assertStatus(200);
+    }
+
     public function test_login_merchant(): void
     {
         $responseRegister = $this->postJson('/api/auth/register', [

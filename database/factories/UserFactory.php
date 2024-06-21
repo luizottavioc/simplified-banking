@@ -23,16 +23,16 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $typeUser = fake()->numberBetween(2, 3);
+        $typeUser = fake()->numberBetween(3, 4);
 
         return [
             'name' => fake()->name(),
-            'cpf' => $typeUser === 3 ? fake()->numberBetween(100000000, 999999999) : null,
-            'cnpj' => $typeUser === 2 ? fake()->numberBetween(10000000000000, 99999999999999) : null,
+            'cpf' => $typeUser === 4 ? fake()->numberBetween(100000000, 999999999) : null,
+            'cnpj' => $typeUser === 3 ? fake()->numberBetween(10000000000000, 99999999999999) : null,
             'email' => fake()->unique()->safeEmail(),
             'password' => bcrypt('password'),
-            'user_type_id' => fake()->numberBetween(2, 3),
-            'wallet' => fake()->numberBetween(0, 100000),
+            'user_type_id' => $typeUser,
+            'wallet' => fake()->numberBetween(0, 1000000),
         ];
     }
 }

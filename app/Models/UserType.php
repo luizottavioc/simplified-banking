@@ -11,22 +11,34 @@ class UserType extends Model
 
     protected $table = 'user_types';
 
-    private $typeAdminName = 'admin';
-    private $typeMerchantName = 'merchant';
-    private $typeUsualName = 'usual';
+    private $defaultTypeNames = [
+        'admin' => 'admin',
+        'teller' => 'teller',
+        'merchant' => 'merchant',
+        'usual' => 'usual',
+    ];
 
-    public function getAdminType() {
-        $type = $this->where('type', $this->typeAdminName)->first();
+    public function getAdminType()
+    {
+        $type = $this->where('type', $this->defaultTypeNames['admin'])->first();
         return $type;
     }
 
-    public function getMerchantType() {
-        $type = $this->where('type', $this->typeMerchantName)->first();
+    public function getTellerType()
+    {
+        $type = $this->where('type', $this->defaultTypeNames['teller'])->first();
         return $type;
     }
 
-    public function getUsualType() {
-        $type = $this->where('type', $this->typeUsualName)->first();
+    public function getMerchantType()
+    {
+        $type = $this->where('type', $this->defaultTypeNames['merchant'])->first();
+        return $type;
+    }
+
+    public function getUsualType()
+    {
+        $type = $this->where('type', $this->defaultTypeNames['usual'])->first();
         return $type;
     }
 }

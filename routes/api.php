@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\DepositController;
+use App\Http\Controllers\TransactionsController;
+use App\Http\Controllers\TransferController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -19,9 +22,29 @@ Route::get('hello-world', function (Request $request) {
     return 'Hello, world!';
 });
 
-Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::get('me', [AuthController::class, 'getMe']);
-    Route::get('logout', [AuthController::class, 'logout']);
+Route::group(['middleware' => 'jwt'], function () {
+    Route::prefix('auth')->group(function () {
+        Route::post('register', [AuthController::class, 'register'])->withoutMiddleware('jwt');
+        Route::post('login', [AuthController::class, 'login'])->withoutMiddleware('jwt');
+        Route::get('me', [AuthController::class, 'getMe']);
+        Route::get('logout', [AuthController::class, 'logout']);
+    });
+
+    Route::prefix('deposits')->group(function () {
+        Route::get('/', [DepositController::class, 'getAllDeposits']);
+        Route::get('/{id}', [DepositController::class, 'getOneDeposit']);
+        Route::post('/', [DepositController::class, 'createDeposit']);
+        Route::post('/withdraw', [DepositController::class, 'withdraw']);
+    });
+
+    Route::prefix('transfers')->group(function () {
+        Route::get('/', [TransferController::class, 'getAllTransfers']);
+        Route::get('/{id}', [TransferController::class, 'getOneTransfer']);
+        Route::post('/', [TransferController::class, 'createTransfer']);
+    });
+
+    Route::prefix('transactions')->group(function () {
+        Route::get('/', [TransactionsController::class, 'getAllTransactions']);
+        Route::get('/{idUser}', [TransactionsController::class, 'getTransactionsByUser']);
+    });
 });
