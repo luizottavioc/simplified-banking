@@ -30,11 +30,11 @@ Route::group(['middleware' => 'jwt'], function () {
         Route::get('logout', [AuthController::class, 'logout']);
     });
 
-    Route::prefix('deposits')->group(function () {
+    Route::prefix('deposit')->group(function () {
         Route::get('/', [DepositController::class, 'getAllDeposits']);
         Route::get('/{id}', [DepositController::class, 'getOneDeposit']);
-        Route::post('/', [DepositController::class, 'createDeposit']);
-        Route::post('/withdraw', [DepositController::class, 'withdraw']);
+        Route::post('/', [DepositController::class, 'createDeposit'])->middleware('usertype:teller');
+        Route::post('/withdraw', [DepositController::class, 'withdraw'])->middleware('usertype:teller');
     });
 
     Route::prefix('transfers')->group(function () {
@@ -45,6 +45,6 @@ Route::group(['middleware' => 'jwt'], function () {
 
     Route::prefix('transactions')->group(function () {
         Route::get('/', [TransactionsController::class, 'getAllTransactions']);
-        Route::get('/{idUser}', [TransactionsController::class, 'getTransactionsByUser']);
+        Route::get('/{idUser}', [TransactionsController::class, 'getTransactionsByUser'])->middleware('usertype:admin,teller');
     });
 });

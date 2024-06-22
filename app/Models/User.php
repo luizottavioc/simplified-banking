@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -67,10 +68,29 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
+    public function userType(): BelongsTo
+    {
+        return $this->belongsTo(UserType::class, 'user_type_id');
+    }
+
+    public function getUserById($id)
+    {
+        return $this->find($id);
+    }
+
     public function registerUser(array $userData)
     {
         $userData['password'] = bcrypt($userData['password']);
         $user = $this->create($userData);
+
+        return $user;
+    }
+
+    public function incrementUserWallet(int $idUser, int $value)
+    {
+        $user = $this->getUserById($idUser);
+        $user->wallet = $user->wallet + $value;
+        $user->save();
 
         return $user;
     }
