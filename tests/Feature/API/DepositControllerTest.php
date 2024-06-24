@@ -49,9 +49,46 @@ class DepositControllerTest extends TestCase
         ];
 
         $response = $this->postJson('/api/deposit', $data, $headers);
-        $response->assertStatus(201);
 
-        $this->assertEquals($initialWallet + 1299, $userTo->refresh()->wallet);
+        $response->assertStatus(201);
+        $response->assertJsonStructure([
+            'message',
+            'data' => [
+                'user',
+                'deposit'
+            ]
+        ]);
+
+        $responseBody = $response->json();
+        $newUser = $responseBody['data']['user'];
+
+        $this->assertEquals($initialWallet + 1299, $newUser['wallet']);
+    }
+
+    public function test_error_create_deposit_by_non_teller(): void
+    {
+        $usualUser1 = User::factory()->usual()->create();
+        $responseLogin = $this->postJson('/api/auth/login', [
+            'email' => $usualUser1->email,
+            'password' => 'password',
+        ]);
+
+        $responseBody = $responseLogin->json();
+        $token = $responseBody['data']['access_token'];
+
+        $headers = [
+            'Authorization' => 'Bearer ' . $token,
+        ];
+
+        $usualUser2 = User::factory()->usual()->create();
+        $data = [
+            'user_id' => $usualUser2->id,
+            'value' => 1299,
+        ];
+
+        $response = $this->postJson('/api/deposit', $data, $headers);
+
+        $response->assertStatus(403);
     }
 
     public function test_error_create_deposit_to_admin(): void
@@ -70,6 +107,22 @@ class DepositControllerTest extends TestCase
         $response->assertStatus(422);
     }
 
+    public function test_error_create_deposit_to_teller(): void
+    {
+        $userTellerTo = User::factory()->teller()->create();
+        $data = [
+            'user_id' => $userTellerTo->id,
+            'value' => 1299,
+        ];
+
+        $headers = [
+            'Authorization' => 'Bearer ' . self::$tokenTeller,
+        ];
+
+        $response = $this->postJson('/api/deposit', $data, $headers);
+        $response->assertStatus(422);
+    }   
+
     public function test_error_create_deposit_to_merchant(): void
     {
         $userTo = User::factory()->merchant()->create();
@@ -86,5 +139,65 @@ class DepositControllerTest extends TestCase
         $response = $this->postJson('/api/deposit', $data, $headers);
 
         $response->assertStatus(422);
+    }
+
+    public function test_error_create_negative_deposit(): void
+    {
+        $userTo = User::factory()->usual()->create();
+        $data = [
+            'user_id' => $userTo->id,
+            'value' => -1299,
+        ];
+
+        $headers = [
+            'Authorization' => 'Bearer ' . self::$tokenTeller,
+        ];
+
+        $response = $this->postJson('/api/deposit', $data, $headers);
+        $response->assertStatus(422);
+    }
+
+    public function test_create_withdraw(): void
+    {
+        $initialWallet = 1000;
+        $usualUser = User::create([
+            'name' => 'User To',
+            'cpf' => '11111111111',
+            'email' => 'user@user.com',
+            'password' => bcrypt('password'),
+            'user_type_id' => 4,
+            'wallet' => $initialWallet,
+        ]);
+
+        $responseLogin = $this->postJson('/api/auth/login', [
+            'email' => $usualUser->email,
+            'password' => 'password',
+        ]);
+
+        $responseBodyLogin = $responseLogin->json();
+        $usualToken = $responseBodyLogin['data']['access_token'];
+
+        $data = [
+            'value' => 500,
+        ];
+
+        $headers = [
+            'Authorization' => 'Bearer ' . $usualToken,
+        ];
+
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+
+        $responseWithdraw->assertStatus(201);
+        $responseWithdraw->assertJsonStructure([
+            'message',
+            'data' => [
+                'user',
+                'withdraw'
+            ]
+        ]);
+
+        $responseWithdrawBody = $responseWithdraw->json();
+        $newUser = $responseWithdrawBody['data']['user'];
+        $this->assertEquals($initialWallet - 500, $newUser['wallet']);
     }
 }

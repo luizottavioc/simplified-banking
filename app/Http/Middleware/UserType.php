@@ -59,6 +59,6 @@ class UserType
             }
         }
         
-        return $this->error('Unauthorized', 401);
+        return $this->error('User not authorized', 403);
     }
 }

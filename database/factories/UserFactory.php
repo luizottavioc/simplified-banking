@@ -38,6 +38,17 @@ class UserFactory extends Factory
         ];
     }
 
+    public function teller(): self
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'cpf' => null,
+                'cnpj' => null,
+                'user_type_id' => 2,
+            ];
+        });
+    }
+
     public function merchant(): self
     {
         return $this->state(function (array $attributes) {

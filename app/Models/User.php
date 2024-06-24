@@ -24,6 +24,7 @@ class User extends Authenticatable implements JWTSubject
         'cnpj',
         'password',
         'user_type_id',
+        'wallet',
     ];
 
     /**
@@ -42,7 +43,7 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'password' => 'hashed',
-
+        'wallet' => 'integer',
     ];
 
     /**
@@ -90,6 +91,15 @@ class User extends Authenticatable implements JWTSubject
     {
         $user = $this->getUserById($idUser);
         $user->wallet = $user->wallet + $value;
+        $user->save();
+
+        return $user;
+    }
+
+    public function decrementUserWallet(int $idUser, int $value)
+    {
+        $user = $this->getUserById($idUser);
+        $user->wallet = $user->wallet - $value;
         $user->save();
 
         return $user;

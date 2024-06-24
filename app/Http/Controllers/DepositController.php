@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\ServiceException;
 use App\Http\Requests\Deposit\CreateDepositRequest;
+use App\Http\Requests\Deposit\WithdrawRequest;
 use App\Models\Deposit;
 use App\Models\User;
 use App\Services\DepositService;
@@ -43,9 +44,14 @@ class DepositController extends Controller
             );
             
             $deposit = $depositModel->createDeposit($depositToInsert);
-            $userModel->incrementUserWallet($userTo['id'], $depositData['value']);
+            $newUser = $userModel->incrementUserWallet($userTo['id'], $depositData['value']);
 
-            return $this->response('Deposit created successfully', 201, $deposit);
+            $responseData = [
+                'deposit' => $deposit,
+                'user' => $newUser
+            ];
+
+            return $this->response('Deposit created successfully', 201, $responseData);
         } catch (ServiceException $e) {
             return $this->error($e->getMessage(), $e->getCode(), []);
         } catch (\Exception $e) {
@@ -53,7 +59,34 @@ class DepositController extends Controller
         }
     }
 
-    public function withdraw()
+    public function withdraw(WithdrawRequest $request)
     {
+        try {
+            $withdrawData = $request->validated();
+            $loggedUser = auth()->user()->toArray();
+            
+            $depositService = new DepositService();
+            $withdrawToInsert = $depositService->getWithdrawToInsert(
+                $withdrawData,
+                $loggedUser
+            );
+
+            $depositModel = new Deposit();
+            $userModel = new User();
+
+            $withdraw = $depositModel->createWithdraw($withdrawToInsert);
+            $newUser = $userModel->decrementUserWallet($loggedUser['id'], $withdrawData['value']);
+
+            $responseData = [
+                'withdraw' => $withdraw,
+                'user' => $newUser
+            ];
+
+            return $this->response('Withdraw created successfully', 201, $responseData);
+        } catch (ServiceException $e) {
+            return $this->error($e->getMessage(), $e->getCode(), []);
+        } catch (\Exception $e) {
+            return $this->error('Unexpected error on create deposit', 500);
+        }
     }
 }

@@ -34,4 +34,9 @@ class Deposit extends Model
     {
         return $this->create($deposit);
     }
+
+    public function createWithdraw($withdraw): Deposit
+    {
+        return $this->create($withdraw);
+    }
 }
