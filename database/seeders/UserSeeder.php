@@ -22,15 +22,5 @@ class UserSeeder extends Seeder
             'user_type_id' => 1,
             'wallet' => 0
         ]);
-
-        DB::table('users')->insert([
-            'name' => 'teller',
-            'cpf' => null,
-            'cnpj' => null,
-            'email' => 'teller@teller.com',
-            'password' => bcrypt(env('TELLER_PASSWORD')),
-            'user_type_id' => 2,
-            'wallet' => 0
-        ]);
     }
 }

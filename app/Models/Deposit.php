@@ -12,7 +12,6 @@ class Deposit extends Model
 
     protected $fillable = [
         'user_id',
-        'teller_id',
         'value',
     ];
 
@@ -25,11 +24,6 @@ class Deposit extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function taller(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'taller_id');
-    }
-
     public function createDeposit($deposit): Deposit
     {
         return $this->create($deposit);
@@ -38,5 +32,10 @@ class Deposit extends Model
     public function createWithdraw($withdraw): Deposit
     {
         return $this->create($withdraw);
+    }
+
+    public function deleteDeposit($depositId): void
+    {
+        $this->where('id', $depositId)->delete();
     }
 }

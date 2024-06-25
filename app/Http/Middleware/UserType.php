@@ -16,7 +16,6 @@ class UserType
     private $userTypeModel = null;
     private $getFnUserTypeByName = [
         'admin' => 'getAdminType',
-        'teller' => 'getTellerType',
         'merchant' => 'getMerchantType',
         'usual' => 'getUsualType',
     ];

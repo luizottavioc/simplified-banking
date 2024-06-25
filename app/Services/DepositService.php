@@ -15,25 +15,19 @@ class DepositService
         $this->userTypeModel = new $userTypeModel();
     }
 
-    public function getDepositToInsert(array $depositData, array $teller, array $userTo): array
+    public function getDepositToInsert(array $depositData, array $user): array
     {
-        $tellerType = $this->userTypeModel->getTellerType();
-        if ($teller['user_type_id'] != $tellerType->id) {
+        $usualType = $this->userTypeModel->getUsualType();
+        if ($user['user_type_id'] != $usualType->id) {
             throw new ServiceException(
-                'Only tellers can create deposits',
+                'Only usual users can make deposits',
                 403
             );
         }
 
-        $usualType = $this->userTypeModel->getUsualType();
-        if ($userTo['user_type_id'] != $usualType->id) {
-            throw new ServiceException(
-                'Only usual users can receive deposits',
-                422
-            );
-        }
-
-        $valueIsInt = is_int($depositData['value']);
+        $depositValue = $depositData['value'];
+        
+        $valueIsInt = is_int($depositValue);
         if (!$valueIsInt) {
             throw new ServiceException(
                 'Value must be an integer',
@@ -41,7 +35,7 @@ class DepositService
             );
         }
 
-        if ($depositData['value'] <= 0) {
+        if ($depositValue <= 0) {
             throw new ServiceException(
                 'Value must be greater than zero',
                 422
@@ -49,9 +43,8 @@ class DepositService
         }
 
         $depositToInsert = [
-            'user_id' => $userTo['id'],
-            'teller_id' => $teller['id'],
-            'value' => $depositData['value'],
+            'user_id' => $user['id'],
+            'value' => $depositValue,
         ];
 
         return $depositToInsert;
@@ -59,6 +52,14 @@ class DepositService
 
     public function getWithdrawToInsert(array $withdrawData, array $user): array 
     {
+        $usualType = $this->userTypeModel->getUsualType();
+        if ($user['user_type_id'] != $usualType->id) {
+            throw new ServiceException(
+                'Only usual users can make withdraws',
+                403
+            );
+        }
+
         $withdrawValue = $withdrawData['value'];
 
         $valueIsInt = is_int($withdrawValue);

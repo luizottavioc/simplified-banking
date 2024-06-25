@@ -33,18 +33,18 @@ Route::group(['middleware' => 'jwt'], function () {
     Route::prefix('deposit')->group(function () {
         Route::get('/', [DepositController::class, 'getAllDeposits']);
         Route::get('/{id}', [DepositController::class, 'getOneDeposit']);
-        Route::post('/', [DepositController::class, 'createDeposit'])->middleware('usertype:teller');
+        Route::post('/', [DepositController::class, 'createDeposit'])->middleware('usertype:usual');
         Route::post('/withdraw', [DepositController::class, 'withdraw']);
     });
 
     Route::prefix('transfers')->group(function () {
         Route::get('/', [TransferController::class, 'getAllTransfers']);
         Route::get('/{id}', [TransferController::class, 'getOneTransfer']);
-        Route::post('/', [TransferController::class, 'createTransfer']);
+        Route::post('/', [TransferController::class, 'createTransfer'])->middleware('usertype:usual');
     });
 
     Route::prefix('transactions')->group(function () {
         Route::get('/', [TransactionsController::class, 'getAllTransactions']);
-        Route::get('/{idUser}', [TransactionsController::class, 'getTransactionsByUser'])->middleware('usertype:admin,teller');
+        Route::get('/{idUser}', [TransactionsController::class, 'getTransactionsByUser'])->middleware('usertype:admin');
     });
 });

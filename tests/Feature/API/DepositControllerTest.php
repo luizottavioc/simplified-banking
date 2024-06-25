@@ -2,20 +2,34 @@
 
 namespace Tests\Feature\API;
 
+use App\Contracts\ExternalAuthServiceInterface;
 use App\Models\User;
-use Database\Factories\UserUsualFactory;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\UserTypesSeeder;
-use Database\Seeders\UserUsualSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class DepositControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    static $tokenTeller;
+    public static $userUsual = null;
+    public static $tokenUsual = null;
+
+    public static function getHeaderUsualToken(): array
+    {
+        return ['Authorization' => 'Bearer ' . self::$tokenUsual];
+    }
+
+    public function getLoginToken(string $email, string $password): string
+    {
+        $response = $this->postJson('/api/auth/login', [
+            'email' => $email,
+            'password' => $password,
+        ]);
+
+        return $response->json()['data']['access_token'];
+    }
 
     public function setUp(): void
     {
@@ -24,29 +38,31 @@ class DepositControllerTest extends TestCase
         $this->seed(UserTypesSeeder::class);
         $this->seed(UserSeeder::class);
 
+        self::$userUsual = User::factory()->usual(1000)->create();
+        self::$tokenUsual = $this->getLoginToken(self::$userUsual->email, 'password');
+    }
 
-        $response = $this->postJson('/api/auth/login', [
-            'email' => 'teller@teller.com',
-            'password' => 'teller',
-        ]);
+    public function externalAuthorizeTrue(): void
+    {
+        $this->mock(ExternalAuthServiceInterface::class, function ($mock) {
+            $mock->shouldReceive('getExternalAuth')->andReturn(true);
+        });
+    }
 
-        $responseBody = $response->json();
-        self::$tokenTeller = $responseBody['data']['access_token'];
+    public function externalAuthorizeFalse(): void
+    {
+        $this->mock(ExternalAuthServiceInterface::class, function ($mock) {
+            $mock->shouldReceive('getExternalAuth')->andReturn(false);
+        });
     }
 
     public function test_create_deposit(): void
     {
-        $userTo = User::factory()->usual()->create();
-        $initialWallet = $userTo->wallet;
+        $this->externalAuthorizeTrue();
+        $initialWallet = self::$userUsual->wallet;
 
-        $data = [
-            'user_id' => $userTo->id,
-            'value' => 1299,
-        ];
-
-        $headers = [
-            'Authorization' => 'Bearer ' . self::$tokenTeller,
-        ];
+        $data = ['value' => 1299];
+        $headers = self::getHeaderUsualToken();
 
         $response = $this->postJson('/api/deposit', $data, $headers);
 
@@ -60,98 +76,48 @@ class DepositControllerTest extends TestCase
         ]);
 
         $responseBody = $response->json();
-        $newUser = $responseBody['data']['user'];
+        $updatedUser = $responseBody['data']['user'];
 
-        $this->assertEquals($initialWallet + 1299, $newUser['wallet']);
+        $this->assertEquals($initialWallet + 1299, $updatedUser['wallet']);
     }
 
-    public function test_error_create_deposit_by_non_teller(): void
+    public function test_error_on_create_deposit_as_admin(): void
     {
-        $usualUser1 = User::factory()->usual()->create();
-        $responseLogin = $this->postJson('/api/auth/login', [
-            'email' => $usualUser1->email,
-            'password' => 'password',
-        ]);
+        $this->externalAuthorizeTrue();
+        $tokenAdmin = $this->getLoginToken('admin@admin.com', 'admin');
 
-        $responseBody = $responseLogin->json();
-        $token = $responseBody['data']['access_token'];
-
-        $headers = [
-            'Authorization' => 'Bearer ' . $token,
-        ];
-
-        $usualUser2 = User::factory()->usual()->create();
-        $data = [
-            'user_id' => $usualUser2->id,
-            'value' => 1299,
-        ];
-
+        $data = ['value' => 1299];
+        $headers = ['Authorization' => 'Bearer ' . $tokenAdmin];
         $response = $this->postJson('/api/deposit', $data, $headers);
 
         $response->assertStatus(403);
     }
 
-    public function test_error_create_deposit_to_admin(): void
+    public function test_error_on_create_deposit_as_merchant(): void
     {
-        $data = [
-            'user_id' => 1,
-            'value' => 1299,
-        ];
+        $merchantUser = User::factory()->merchant()->create();
+        $tokenMerchant = $this->getLoginToken($merchantUser->email, 'password');
 
-        $headers = [
-            'Authorization' => 'Bearer ' . self::$tokenTeller,
-        ];
-
+        $data = ['value' => 1299];
+        $headers = ['Authorization' => 'Bearer ' . $tokenMerchant];
         $response = $this->postJson('/api/deposit', $data, $headers);
 
+        $response->assertStatus(403);
+    }
+
+    public function test_error_on_create_negative_deposit(): void
+    {
+        $data = ['value' => -1299];
+        $headers = self::getHeaderUsualToken();
+
+        $response = $this->postJson('/api/deposit', $data, $headers);
         $response->assertStatus(422);
     }
 
-    public function test_error_create_deposit_to_teller(): void
+    public function test_error_on_create_deposit_with_zero_value(): void
     {
-        $userTellerTo = User::factory()->teller()->create();
-        $data = [
-            'user_id' => $userTellerTo->id,
-            'value' => 1299,
-        ];
-
-        $headers = [
-            'Authorization' => 'Bearer ' . self::$tokenTeller,
-        ];
-
-        $response = $this->postJson('/api/deposit', $data, $headers);
-        $response->assertStatus(422);
-    }   
-
-    public function test_error_create_deposit_to_merchant(): void
-    {
-        $userTo = User::factory()->merchant()->create();
-
-        $data = [
-            'user_id' => $userTo->id,
-            'value' => 1299,
-        ];
-
-        $headers = [
-            'Authorization' => 'Bearer ' . self::$tokenTeller,
-        ];
-
-        $response = $this->postJson('/api/deposit', $data, $headers);
-
-        $response->assertStatus(422);
-    }
-
-    public function test_error_create_negative_deposit(): void
-    {
-        $userTo = User::factory()->usual()->create();
-        $data = [
-            'user_id' => $userTo->id,
-            'value' => -1299,
-        ];
-
-        $headers = [
-            'Authorization' => 'Bearer ' . self::$tokenTeller,
-        ];
+        $data = ['value' => 0];
+        $headers = self::getHeaderUsualToken();
 
         $response = $this->postJson('/api/deposit', $data, $headers);
         $response->assertStatus(422);
@@ -159,31 +125,10 @@ class DepositControllerTest extends TestCase
 
     public function test_create_withdraw(): void
     {
-        $initialWallet = 1000;
-        $usualUser = User::create([
-            'name' => 'User To',
-            'cpf' => '11111111111',
-            'email' => 'user@user.com',
-            'password' => bcrypt('password'),
-            'user_type_id' => 4,
-            'wallet' => $initialWallet,
-        ]);
+        $initialWallet = self::$userUsual->wallet;
 
-        $responseLogin = $this->postJson('/api/auth/login', [
-            'email' => $usualUser->email,
-            'password' => 'password',
-        ]);
-
-        $responseBodyLogin = $responseLogin->json();
-        $usualToken = $responseBodyLogin['data']['access_token'];
-
-        $data = [
-            'value' => 500,
-        ];
-
-        $headers = [
-            'Authorization' => 'Bearer ' . $usualToken,
-        ];
+        $data = ['value' => 500];
+        $headers = self::getHeaderUsualToken();
 
         $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
 
@@ -198,6 +143,58 @@ class DepositControllerTest extends TestCase
 
         $responseWithdrawBody = $responseWithdraw->json();
         $newUser = $responseWithdrawBody['data']['user'];
+
         $this->assertEquals($initialWallet - 500, $newUser['wallet']);
     }
+
+    public function test_error_on_create_withdraw_as_admin(): void
+    {
+        $tokenAdmin = $this->getLoginToken('admin@admin.com', 'admin');
+
+        $data = ['value' => 500];
+        $headers = ['Authorization' => 'Bearer ' . $tokenAdmin];
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+
+        $responseWithdraw->assertStatus(403);
+    }
+
+    public function test_error_on_create_withdraw_as_merchant(): void
+    {
+        $merchantUser = User::factory()->merchant()->create();
+        $tokenMerchant = $this->getLoginToken($merchantUser->email, 'password');
+
+        $data = ['value' => 500];
+        $headers = ['Authorization' => 'Bearer ' . $tokenMerchant];
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+
+        $responseWithdraw->assertStatus(403);
+    }
+
+    public function test_error_on_create_withdraw_negative_value(): void
+    {
+        $data = ['value' => -500];
+        $headers = self::getHeaderUsualToken();
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+
+        $responseWithdraw->assertStatus(422);
+    }
+
+    public function test_error_on_create_withdraw_zero_value(): void
+    {
+        $data = ['value' => 0];
+        $headers = self::getHeaderUsualToken();
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+
+        $responseWithdraw->assertStatus(422);
+    }
+
+    public function test_error_on_create_withdraw_without_enough_money(): void
+    {
+        $data = ['value' => 5000];
+        $headers = self::getHeaderUsualToken();
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+
+        $responseWithdraw->assertStatus(422);
+    }
+
 }

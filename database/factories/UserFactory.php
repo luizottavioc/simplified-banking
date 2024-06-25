@@ -23,13 +23,13 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $typeUser = fake()->numberBetween(3, 4);
+        $typeUser = fake()->numberBetween(2, 3);
 
         return [
             'name' => fake()->name(),
-            'cpf' => $typeUser === 4 ?
+            'cpf' => $typeUser === 3 ?
                 fake()->numberBetween(100000000, 999999999) : null,
-            'cnpj' => $typeUser === 3 ?
+            'cnpj' => $typeUser === 2 ?
                 fake()->numberBetween(10000000000000, 99999999999999) : null,
             'email' => fake()->unique()->safeEmail(),
             'password' => bcrypt('password'),
@@ -38,35 +38,25 @@ class UserFactory extends Factory
         ];
     }
 
-    public function teller(): self
-    {
-        return $this->state(function (array $attributes) {
-            return [
-                'cpf' => null,
-                'cnpj' => null,
-                'user_type_id' => 2,
-            ];
-        });
-    }
-
     public function merchant(): self
     {
         return $this->state(function (array $attributes) {
             return [
                 'cpf' => null,
                 'cnpj' => fake()->numberBetween(10000000000000, 99999999999999),
-                'user_type_id' => 3,
+                'user_type_id' => 2,
             ];
         });
     }
 
-    public function usual(): self
+    public function usual($wallet = null): self
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function (array $attributes) use ($wallet) {
             return [
                 'cpf' => fake()->numberBetween(100000000, 999999999),
                 'cnpj' => null,
-                'user_type_id' => 4,
+                'user_type_id' => 3,
+                'wallet' => $wallet ?? fake()->numberBetween(0, 1000000),
             ];
         });
     }

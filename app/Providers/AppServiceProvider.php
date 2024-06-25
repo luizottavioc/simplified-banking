@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\ExternalAuthServiceInterface;
+use App\Services\ExternalAuthService;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
 
@@ -12,6 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(ExternalAuthServiceInterface::class, ExternalAuthService::class);
         Sanctum::ignoreMigrations();
     }
 

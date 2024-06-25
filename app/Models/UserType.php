@@ -13,7 +13,6 @@ class UserType extends Model
 
     private $defaultTypeNames = [
         'admin' => 'admin',
-        'teller' => 'teller',
         'merchant' => 'merchant',
         'usual' => 'usual',
     ];
@@ -21,12 +20,6 @@ class UserType extends Model
     public function getAdminType()
     {
         $type = $this->where('type', $this->defaultTypeNames['admin'])->first();
-        return $type;
-    }
-
-    public function getTellerType()
-    {
-        $type = $this->where('type', $this->defaultTypeNames['teller'])->first();
         return $type;
     }
 
