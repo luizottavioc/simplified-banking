@@ -10,71 +10,17 @@ use App\Models\Deposit;
 use App\Models\User;
 use App\Services\DepositService;
 use App\Traits\HttpResponses;
+use Illuminate\Support\Facades\DB;
 
 class DepositController extends Controller
 {
     use HttpResponses;
 
-    protected $externalAuthService;
+    private $depositService;
 
-    public function __construct(ExternalAuthServiceInterface $externalAuthService)
+    public function __construct(DepositService $depositService)
     {
-        $this->externalAuthService = $externalAuthService;
-    }
-
-
-    private function handleDepositError(object|null $createdDeposit, object|null $updatedUser): bool
-    {
-        $depositWasCreated = !is_null($createdDeposit);
-        $userWasUpdated = !is_null($updatedUser);
-
-        if (!$depositWasCreated && !$userWasUpdated) {
-            return true;
-        }
-
-        if ($depositWasCreated) {
-            $depositModel = new Deposit();
-            $depositModel->deleteDeposit($createdDeposit->id);
-
-            if ($userWasUpdated) {
-                $userModel = new User();
-                $userModel->decrementUserWallet(
-                    $updatedUser->id,
-                    $createdDeposit->value
-                );
-            }
-
-            return true;
-        }
-
-        return !$userWasUpdated;
-    }
-
-    private function handleWithdrawError(object|null $createdWithdraw, object|null $updatedUser): bool
-    {
-        $withdrawWasCreated = !empty($createdWithdraw);
-        $userWasUpdated = !empty($updatedUser);
-
-        if (!$withdrawWasCreated && !$userWasUpdated) {
-            return true;
-        }
-
-        if ($withdrawWasCreated) {
-            $withdrawModel = new Deposit();
-            $withdrawModel->deleteWithdraw($createdWithdraw->id);
-
-            if ($userWasUpdated) {
-                $userModel = new User();
-                $userModel->incrementUserWallet(
-                    $updatedUser->id,
-                    $createdWithdraw->value
-                );
-            }
-
-            return true;
-        }
-
-        return !$userWasUpdated;
+        $this->depositService = $depositService;
     }
 
     public function getAllDeposits()
@@ -89,62 +35,37 @@ class DepositController extends Controller
 
     public function createDeposit(DepositRequest $request)
     {
-        $deposit = null;
-        $updatedUser = null;
-
         try {
-            $depositData = $request->validated();
+            DB::beginTransaction();
 
-            $userModel = new User();
-            $depositService = new DepositService();
+            $depositData = $request->validated();
             $loggedUser = auth()->user()->toArray();
 
-            $depositToInsert = $depositService->getDepositToInsert(
+            $depositResponse = $this->depositService->createDeposit(
                 $depositData,
                 $loggedUser
             );
 
-            $depositModel = new Deposit();
-            $deposit = $depositModel->createDeposit($depositToInsert);
-            $updatedUser = $userModel->incrementUserWallet(
-                $loggedUser['id'],
-                $depositData['value']
-            );
-
-            $authorization = $this->externalAuthService->getExternalAuth();
-            if (!$authorization) {
-                return $this->error(
-                    'Authorization error',
-                    500
-                );
-            }
-
-            $responseData = [
-                'deposit' => $deposit,
-                'user' => $updatedUser
-            ];
+            DB::commit();
 
             return $this->response(
                 'Deposit created successfully',
                 201,
-                $responseData
+                $depositResponse
             );
         } catch (ServiceException $e) {
-            $handleError = $this->handleDepositError($deposit, $updatedUser);
-            if ($handleError) {
-                return $this->error(
-                    $e->getMessage(),
-                    $e->getCode(),
-                    []
-                );
-            }
+            logger()->error('createDeposit - Service Exception: ' . $e->getMessage());
+            DB::rollBack();
 
             return $this->error(
-                'Unexpected error on create deposit',
-                500
+                $e->getMessage(),
+                $e->getCode(),
+                []
             );
         } catch (\Exception $e) {
-            $this->handleDepositError($deposit, $updatedUser);
+            logger()->error('createDeposit - Exception: ' . $e->getMessage());
+            DB::rollBack();
+
             return $this->error(
                 'Unexpected error on create deposit',
                 500
@@ -154,51 +75,37 @@ class DepositController extends Controller
 
     public function withdraw(WithdrawRequest $request)
     {
-        $withdraw = null;
-        $updatedUser = null;
-
         try {
+            DB::beginTransaction();
+
             $withdrawData = $request->validated();
             $loggedUser = auth()->user()->toArray();
 
-            $depositService = new DepositService();
-            $withdrawToInsert = $depositService->getWithdrawToInsert(
+            $withdrawResponse = $this->depositService->createWithdraw(
                 $withdrawData,
                 $loggedUser
             );
 
-            $depositModel = new Deposit();
-            $userModel = new User();
-
-            $withdraw = $depositModel->createWithdraw($withdrawToInsert);
-            $updatedUser = $userModel->decrementUserWallet($loggedUser['id'], $withdrawData['value']);
-
-            $responseData = [
-                'withdraw' => $withdraw,
-                'user' => $updatedUser
-            ];
+            DB::commit();
 
             return $this->response(
                 'Withdraw created successfully',
                 201,
-                $responseData
+                $withdrawResponse
             );
         } catch (ServiceException $e) {
-            $handleError = $this->handleWithdrawError($withdraw, $updatedUser);
-            if ($handleError) {
-                return $this->error(
-                    $e->getMessage(),
-                    $e->getCode(),
-                    []
-                );
-            }
-
+            logger()->error('withdraw - Service Exception: ' . $e->getMessage());
+            DB::rollBack();
+            
             return $this->error(
-                'Unexpected error on create deposit',
-                500
+                $e->getMessage(),
+                $e->getCode(),
+                []
             );
         } catch (\Exception $e) {
-            $this->handleWithdrawError($withdraw, $updatedUser);
+            logger()->error('withdraw - Exception: ' . $e->getMessage());
+            DB::rollBack();
+
             return $this->error(
                 'Unexpected error on create deposit',
                 500

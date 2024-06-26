@@ -2,17 +2,57 @@
 
 namespace App\Services;
 
+use App\Contracts\ExternalAuthServiceInterface;
 use App\Exceptions\ServiceException;
+use App\Models\Deposit;
 use App\Models\User;
 use App\Models\UserType;
 
 class DepositService
 {
-    private $userTypeModel = null;
+    private $userModel;
+    private $userTypeModel;
+    private $depositModel;
 
-    public function __construct($userTypeModel = UserType::class)
+    private $externalAuthService;
+
+    public function __construct(
+        User $userModel,
+        UserType $userTypeModel,
+        Deposit $depositModel,
+        ExternalAuthServiceInterface $externalAuthService
+    ) {
+        $this->userModel = $userModel;
+        $this->userTypeModel = $userTypeModel;
+        $this->depositModel = $depositModel;
+        $this->externalAuthService = $externalAuthService;
+    }
+
+    public function createDeposit(array $depositData, array $loggedUser): array
     {
-        $this->userTypeModel = new $userTypeModel();
+        $depositToInsert = $this->getDepositToInsert(
+            $depositData,
+            $loggedUser
+        );
+
+        $deposit = $this->depositModel->createDeposit($depositToInsert);
+        $updatedUser = $this->userModel->incrementUserWallet(
+            $loggedUser['id'],
+            $depositData['value']
+        );
+
+        $authorization = $this->externalAuthService->getExternalAuth();
+        if (!$authorization) {
+            throw new ServiceException(
+                'Authorization error',
+                500
+            );
+        }
+
+        return [
+            'deposit' => $deposit,
+            'user' => $updatedUser
+        ];
     }
 
     public function getDepositToInsert(array $depositData, array $user): array
@@ -26,7 +66,7 @@ class DepositService
         }
 
         $depositValue = $depositData['value'];
-        
+
         $valueIsInt = is_int($depositValue);
         if (!$valueIsInt) {
             throw new ServiceException(
@@ -50,7 +90,29 @@ class DepositService
         return $depositToInsert;
     }
 
-    public function getWithdrawToInsert(array $withdrawData, array $user): array 
+    public function createWithdraw(array $withdrawData, array $loggedUser): array
+    {
+        $withdrawToInsert = $this->getWithdrawToInsert(
+            $withdrawData,
+            $loggedUser
+        );
+
+        $withdraw = $this->depositModel->createWithdraw(
+            $withdrawToInsert
+        );
+
+        $updatedUser = $this->userModel->decrementUserWallet(
+            $loggedUser['id'],
+            $withdrawData['value']
+        );
+
+        return [
+            'withdraw' => $withdraw,
+            'user' => $updatedUser
+        ];
+    }
+
+    public function getWithdrawToInsert(array $withdrawData, array $user): array
     {
         $usualType = $this->userTypeModel->getUsualType();
         if ($user['user_type_id'] != $usualType->id) {
@@ -87,7 +149,7 @@ class DepositService
 
         $withdrawToInsert = [
             'user_id' => $user['id'],
-            'value' => - $withdrawValue,
+            'value' => -$withdrawValue,
         ];
 
         return $withdrawToInsert;

@@ -7,12 +7,9 @@ use App\Exceptions\ServiceException;
 use App\Models\Transfer;
 use App\Models\User;
 use App\Models\UserType;
-use App\Traits\HttpResponses;
 
 class TransferService
 {
-    use HttpResponses;
-
     private $userModel;
     private $userTypeModel;
     private $transferModel;
