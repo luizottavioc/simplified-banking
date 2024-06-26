@@ -10,8 +10,6 @@ use App\Models\Deposit;
 use App\Models\User;
 use App\Services\DepositService;
 use App\Traits\HttpResponses;
-use App\Utils\HttpRequests;
-use Illuminate\Support\Facades\Http;
 
 class DepositController extends Controller
 {
@@ -25,10 +23,10 @@ class DepositController extends Controller
     }
 
 
-    private function handleDepositError($createdDeposit, $updatedUser): bool
+    private function handleDepositError(object|null $createdDeposit, object|null $updatedUser): bool
     {
-        $depositWasCreated = !empty($createdDeposit);
-        $userWasUpdated = !empty($updatedUser);
+        $depositWasCreated = !is_null($createdDeposit);
+        $userWasUpdated = !is_null($updatedUser);
 
         if (!$depositWasCreated && !$userWasUpdated) {
             return true;
@@ -40,7 +38,10 @@ class DepositController extends Controller
 
             if ($userWasUpdated) {
                 $userModel = new User();
-                $userModel->decrementUserWallet($updatedUser->id, $createdDeposit->value);
+                $userModel->decrementUserWallet(
+                    $updatedUser->id,
+                    $createdDeposit->value
+                );
             }
 
             return true;
@@ -49,7 +50,7 @@ class DepositController extends Controller
         return !$userWasUpdated;
     }
 
-    private function handleWithdrawError($createdWithdraw, $updatedUser): bool
+    private function handleWithdrawError(object|null $createdWithdraw, object|null $updatedUser): bool
     {
         $withdrawWasCreated = !empty($createdWithdraw);
         $userWasUpdated = !empty($updatedUser);
@@ -64,7 +65,10 @@ class DepositController extends Controller
 
             if ($userWasUpdated) {
                 $userModel = new User();
-                $userModel->incrementUserWallet($updatedUser->id, $createdWithdraw->value);
+                $userModel->incrementUserWallet(
+                    $updatedUser->id,
+                    $createdWithdraw->value
+                );
             }
 
             return true;
@@ -75,10 +79,12 @@ class DepositController extends Controller
 
     public function getAllDeposits()
     {
+        return $this->error('Not implemented', 501);
     }
 
     public function getOneDeposit()
     {
+        return $this->error('Not implemented', 501);
     }
 
     public function createDeposit(DepositRequest $request)
@@ -99,7 +105,6 @@ class DepositController extends Controller
             );
 
             $depositModel = new Deposit();
-
             $deposit = $depositModel->createDeposit($depositToInsert);
             $updatedUser = $userModel->incrementUserWallet(
                 $loggedUser['id'],

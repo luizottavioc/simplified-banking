@@ -38,13 +38,14 @@ class UserFactory extends Factory
         ];
     }
 
-    public function merchant(): self
+    public function merchant($wallet = null): self
     {
-        return $this->state(function (array $attributes) {
+        return $this->state(function (array $attributes) use ($wallet) {
             return [
                 'cpf' => null,
                 'cnpj' => fake()->numberBetween(10000000000000, 99999999999999),
                 'user_type_id' => 2,
+                'wallet' => $wallet ?? fake()->numberBetween(0, 1000000),
             ];
         });
     }

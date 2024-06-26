@@ -37,7 +37,7 @@ Route::group(['middleware' => 'jwt'], function () {
         Route::post('/withdraw', [DepositController::class, 'withdraw']);
     });
 
-    Route::prefix('transfers')->group(function () {
+    Route::prefix('transfer')->group(function () {
         Route::get('/', [TransferController::class, 'getAllTransfers']);
         Route::get('/{id}', [TransferController::class, 'getOneTransfer']);
         Route::post('/', [TransferController::class, 'createTransfer'])->middleware('usertype:usual');

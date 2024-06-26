@@ -74,12 +74,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(UserType::class, 'user_type_id');
     }
 
-    public function getUserById($id)
+    public function getUserById($id): User|null
     {
         return $this->find($id);
     }
 
-    public function registerUser(array $userData)
+    public function registerUser(array $userData): User
     {
         $userData['password'] = bcrypt($userData['password']);
         $user = $this->create($userData);
@@ -87,7 +87,7 @@ class User extends Authenticatable implements JWTSubject
         return $user;
     }
 
-    public function incrementUserWallet(int $idUser, int $value)
+    public function incrementUserWallet(int $idUser, int $value): User
     {
         $user = $this->getUserById($idUser);
         $user->wallet = $user->wallet + $value;
@@ -96,7 +96,7 @@ class User extends Authenticatable implements JWTSubject
         return $user;
     }
 
-    public function decrementUserWallet(int $idUser, int $value)
+    public function decrementUserWallet(int $idUser, int $value): User
     {
         $user = $this->getUserById($idUser);
         $user->wallet = $user->wallet - $value;

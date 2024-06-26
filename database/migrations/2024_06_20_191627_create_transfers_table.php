@@ -19,9 +19,9 @@ return new class extends Migration
             $table->foreign('payee_id')->references('id')->on('users');
             $table->integer('value');
             $table->boolean('is_completed')->default(false);
-            $table->string('observation');
+            $table->string('observation')->nullable(true);
             $table->dateTime('datetime_init');
-            $table->dateTime('datetime_finish');
+            $table->dateTime('datetime_finish')->nullable(true);
         });
     }
 

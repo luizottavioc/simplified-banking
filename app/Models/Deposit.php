@@ -10,6 +10,8 @@ class Deposit extends Model
 {
     use HasFactory;
 
+    protected $table = 'deposits';
+    
     protected $fillable = [
         'user_id',
         'value',

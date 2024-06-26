@@ -59,6 +59,17 @@ class DepositControllerTest extends TestCase
     public function test_create_deposit(): void
     {
         $this->externalAuthorizeTrue();
+
+        $data = ['value' => 1299];
+        $headers = self::getHeaderUsualToken();
+
+        $response = $this->postJson('/api/deposit', $data, $headers);
+        $response->assertStatus(201);
+    }
+
+    public function test_deposit_changes_user_wallet(): void
+    {
+        $this->externalAuthorizeTrue();
         $initialWallet = self::$userUsual->wallet;
 
         $data = ['value' => 1299];
@@ -124,6 +135,15 @@ class DepositControllerTest extends TestCase
     }
 
     public function test_create_withdraw(): void
+    {
+        $data = ['value' => 500];
+        $headers = self::getHeaderUsualToken();
+
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+        $responseWithdraw->assertStatus(201);
+    }
+
+    public function test_withdraw_changes_user_wallet(): void
     {
         $initialWallet = self::$userUsual->wallet;
 
