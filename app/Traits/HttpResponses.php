@@ -16,7 +16,7 @@ trait HttpResponses
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function response(string $message, string|int $statusCode, Model|JsonResource|array $data = [])
+    public function response(string $message, string|int $statusCode, Model|JsonResource|array $data = []): \Illuminate\Http\JsonResponse
     {
         return response()->json([
             'message' => $message,
@@ -33,7 +33,7 @@ trait HttpResponses
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function error(string $message, string|int $statusCode, array $errors = [])
+    public function error(string $message, string|int $statusCode, array $errors = []): \Illuminate\Http\JsonResponse
     {
         return response()->json([
             'message' => $message,
@@ -49,7 +49,7 @@ trait HttpResponses
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function respondWithToken(string $token, JsonResource $userData, int $statusCode = 200)
+    public function respondWithToken(string $token, JsonResource $userData, int $statusCode = 200): \Illuminate\Http\JsonResponse
     {
         $dataToken = [
             'access_token' => $token,

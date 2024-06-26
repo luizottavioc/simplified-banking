@@ -16,7 +16,6 @@ class Transfer extends Model
         'payer_id',
         'payee_id',
         'value',
-        'is_completed',
         'observation',
         'datetime_init',
         'datetime_finish',
@@ -24,7 +23,6 @@ class Transfer extends Model
 
     protected $casts = [
         'value' => 'integer',
-        'is_completed' => 'boolean',
         'datetime_init' => 'datetime',
         'datetime_finish' => 'datetime',
     ];
@@ -52,28 +50,15 @@ class Transfer extends Model
             'payer_id' => $payerId,
             'payee_id' => $payeeId,
             'value' => $value,
-            'is_completed' => false,
             'datetime_init' => now(),
         ]);
     }
 
-    public function finishTransferCompleted(int $transferId, string|null $observation): bool
+    public function finishTransfer(int $transferId): bool
     {
         return $this->where('id', $transferId)
             ->update([
-                'is_completed' => true,
                 'datetime_finish' => now(),
-                'observation' => $observation
-            ]);
-    }
-
-    public function finishTransferNotCompleted(int $transferId, string|null $observation): bool
-    {
-        return $this->where('id', $transferId)
-            ->update([
-                'is_completed' => false,
-                'datetime_finish' => now(),
-                'observation' => $observation
             ]);
     }
 }

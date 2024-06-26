@@ -2,17 +2,83 @@
 
 namespace App\Services;
 
+use App\Contracts\ExternalAuthServiceInterface;
 use App\Exceptions\ServiceException;
+use App\Models\Transfer;
 use App\Models\User;
 use App\Models\UserType;
+use App\Traits\HttpResponses;
 
 class TransferService
 {
-    private $userTypeModel = null;
+    use HttpResponses;
 
-    public function __construct($userTypeModel = UserType::class)
+    private $userModel;
+    private $userTypeModel;
+    private $transferModel;
+
+    private $externalAuthService;
+
+    public function __construct(
+        User $userModel,
+        UserType $userTypeModel,
+        Transfer $transferModel,
+        ExternalAuthServiceInterface $externalAuthService,
+    ) {
+        $this->userTypeModel = $userTypeModel;
+        $this->userModel = $userModel;
+        $this->transferModel = $transferModel;
+        $this->externalAuthService = $externalAuthService;
+    }
+
+    public function createTransfer(array $transferData, array $loggedUser): array
     {
-        $this->userTypeModel = new $userTypeModel();
+        $userPayee = $this->userModel->getUserById(
+            $transferData['payee_id']
+        );
+
+        if (is_null($userPayee)) {
+            throw new ServiceException(
+                'User payee not found',
+                404
+            );
+        }
+
+        $transferToInsert = $this->getTransferToInsert(
+            $transferData,
+            $loggedUser,
+            $userPayee->toArray()
+        );
+
+        $transfer = $this->transferModel->initTransfer(
+            $transferToInsert['payer_id'],
+            $transferToInsert['payee_id'],
+            $transferToInsert['value']
+        );
+        $updatedPayer = $this->userModel->decrementUserWallet(
+            $transferToInsert['payer_id'],
+            $transferToInsert['value']
+        );
+        $updatedPayee = $this->userModel->incrementUserWallet(
+            $transferToInsert['payee_id'],
+            $transferToInsert['value']
+        );
+
+        $authorization = $this->externalAuthService->getExternalAuth();
+        if (!$authorization) {
+            throw new ServiceException(
+                'Authorization error',
+                500
+            );
+        }
+
+        $this->transferModel->finishTransfer($transfer->id);
+
+        return [
+            'transfer' => $transfer,
+            'payer' => $updatedPayer,
+            'payee' => $updatedPayee
+        ];
     }
 
     public function getTransferToInsert(array $transferData, array $userPayer, array $userPayee): array
