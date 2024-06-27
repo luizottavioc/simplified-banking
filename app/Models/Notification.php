@@ -17,4 +17,9 @@ class Notification extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function createNotification(array $notf)
+    {
+        $this->create($notf);
+    }
 }

@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Services\ExternalAuthService;
+use Exception;
 
 class SendNotificationJob implements ShouldQueue
 {
@@ -37,10 +38,11 @@ class SendNotificationJob implements ShouldQueue
         $externalNotf = $externalAuthService->sendExternalNotification();
 
         if (!$externalNotf) {
-            throw new \Exception('Error sending notification to user ' . $this->idUser . ': external service not available.');
+            throw new Exception('Error sending notification to user ' . $this->idUser . ': external service not available.');
         }
 
-        Notification::create([
+        $notificationModel = new Notification();
+        $notificationModel->createNotification([
             'user_id' => $this->idUser,
             'title' => $this->title,
             'message' => $this->message,

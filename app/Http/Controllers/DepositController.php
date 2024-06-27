@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Contracts\ExternalAuthServiceInterface;
 use App\Exceptions\ServiceException;
 use App\Http\Requests\Deposit\DepositRequest;
 use App\Http\Requests\Deposit\WithdrawRequest;
-use App\Models\Deposit;
-use App\Models\User;
 use App\Services\DepositService;
 use App\Traits\HttpResponses;
 use Illuminate\Support\Facades\DB;

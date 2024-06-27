@@ -74,9 +74,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(UserType::class, 'user_type_id');
     }
 
-    public function getUserById($id): User|null
+    public function getUserById($idUser): User|null
     {
-        return $this->find($id);
+        return $this->find($idUser);
     }
 
     public function registerUser(array $userData): User
