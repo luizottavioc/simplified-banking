@@ -115,9 +115,11 @@ class DepositService
     public function getWithdrawToInsert(array $withdrawData, array $user): array
     {
         $usualType = $this->userTypeModel->getUsualType();
-        if ($user['user_type_id'] != $usualType->id) {
+        $merchantType = $this->userTypeModel->getMerchantType();
+
+        if ($user['user_type_id'] != $usualType->id && $user['user_type_id'] != $merchantType->id) {
             throw new ServiceException(
-                'Only usual users can make withdraws',
+                'Only usual and merchant users can make withdraws',
                 403
             );
         }

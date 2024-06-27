@@ -134,11 +134,23 @@ class DepositControllerTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_create_withdraw(): void
+    public function test_create_withdraw_as_usual(): void
     {
         $data = ['value' => 500];
         $headers = self::getHeaderUsualToken();
 
+        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
+        $responseWithdraw->assertStatus(201);
+    }
+
+    public function test_create_withdraw_as_merchant(): void
+    {
+        $merchantUser = User::factory()->merchant(1000)->create();
+        $tokenMerchant = $this->getLoginToken($merchantUser->email, 'password');
+
+        $data = ['value' => 500];
+        $headers = ['Authorization' => 'Bearer ' . $tokenMerchant];
+        
         $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
         $responseWithdraw->assertStatus(201);
     }
@@ -173,18 +185,6 @@ class DepositControllerTest extends TestCase
 
         $data = ['value' => 500];
         $headers = ['Authorization' => 'Bearer ' . $tokenAdmin];
-        $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
-
-        $responseWithdraw->assertStatus(403);
-    }
-
-    public function test_error_on_create_withdraw_as_merchant(): void
-    {
-        $merchantUser = User::factory()->merchant()->create();
-        $tokenMerchant = $this->getLoginToken($merchantUser->email, 'password');
-
-        $data = ['value' => 500];
-        $headers = ['Authorization' => 'Bearer ' . $tokenMerchant];
         $responseWithdraw = $this->postJson('/api/deposit/withdraw', $data, $headers);
 
         $responseWithdraw->assertStatus(403);
