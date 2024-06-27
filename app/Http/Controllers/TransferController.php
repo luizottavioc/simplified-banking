@@ -35,7 +35,7 @@ class TransferController extends Controller
 
             $transferData = $request->validated();
             $loggedUser = auth()->user()->toArray();
-            
+
             $transferResponse = $this->transferService->createTransfer(
                 $transferData,
                 $loggedUser

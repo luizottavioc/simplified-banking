@@ -4,28 +4,25 @@ namespace App\Services;
 
 use App\Contracts\ExternalAuthServiceInterface;
 use App\Exceptions\ServiceException;
+use App\Jobs\SendNotificationJob;
 use App\Models\Transfer;
 use App\Models\User;
 use App\Models\UserType;
 
 class TransferService
 {
-    private $userModel;
-    private $userTypeModel;
-    private $transferModel;
-
-    private $externalAuthService;
-
     public function __construct(
-        User $userModel,
-        UserType $userTypeModel,
-        Transfer $transferModel,
-        ExternalAuthServiceInterface $externalAuthService,
+        private User $userModel,
+        private UserType $userTypeModel,
+        private Transfer $transferModel,
+        private ExternalAuthServiceInterface $externalAuthService,
+        private SendNotificationJob $sendNotificationJob
     ) {
         $this->userTypeModel = $userTypeModel;
         $this->userModel = $userModel;
         $this->transferModel = $transferModel;
         $this->externalAuthService = $externalAuthService;
+        $this->sendNotificationJob = $sendNotificationJob;
     }
 
     public function createTransfer(array $transferData, array $loggedUser): array
@@ -70,6 +67,13 @@ class TransferService
         }
 
         $this->transferModel->finishTransfer($transfer->id);
+        $this->sendNotificationJob
+            ->dispatch(
+                $userPayee->id,
+                'New transfer',
+                'You have received a new transfer from ' . $updatedPayer['name'],
+                "/transfer/$transfer->id",
+            )->onQueue('notify');
 
         return [
             'transfer' => $transfer,

@@ -16,9 +16,8 @@ return new class extends Migration
             $table->bigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->string('title');
-            $table->string('message');
-            $table->string('type');
-            $table->string('url');
+            $table->string('message')->nullable();
+            $table->string('url')->nullable();
             $table->timestamps();
         });
     }

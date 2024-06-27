@@ -1,8 +1,5 @@
 # Simplified Banking
 
-## Users
-- 
-
 ## Steps to run the project locally
 - Setup .env: ```cv .env.example .env```
 - Setup docker: ```docker compose up -d```
@@ -10,4 +7,5 @@
     - run migrations + seeds: ```php artisan migrate:fresh --seed```
     - generate a jwt secret: ```php artisan jwt:secret```
     - run tests: ```php artisan test```
+    - start notify queue: ```php artisan queue:work --queue=notify```
 - Test code quality: ```docker run -it --rm -v $(pwd):/project -w /project jakzal/phpqa phpmd app text cleancode,codesize,controversial,design,naming,unusedcode```

@@ -3,6 +3,7 @@
 namespace Tests\Feature\API;
 
 use App\Contracts\ExternalAuthServiceInterface;
+use App\Jobs\SendNotificationJob;
 use App\Models\User;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\UserTypesSeeder;
@@ -35,6 +36,13 @@ class TransferControllerTest extends TestCase
 
         $this->seed(UserTypesSeeder::class);
         $this->seed(UserSeeder::class);
+
+        $this->mock(SendNotificationJob::class, function ($mock) {
+            $mock->shouldReceive('dispatch')
+                ->andReturnSelf()
+                ->shouldReceive('onQueue')
+                ->andReturn(true);
+        });
     }
 
     public function externalAuthorizeTrue(): void
@@ -50,6 +58,7 @@ class TransferControllerTest extends TestCase
             $mock->shouldReceive('getExternalAuth')->andReturn(false);
         });
     }
+
 
     public function test_create_transfer(): void
     {

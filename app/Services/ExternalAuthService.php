@@ -13,8 +13,15 @@ class ExternalAuthService implements ExternalAuthServiceInterface
             'Accept' => 'application/json',
         ])->get('https://util.devi.tools/api/v2/authorize');
 
-        $authorizationCode = $req->status();
+        return $req->status() === 200;
+    }
 
-        return $authorizationCode === 200;
+    public function sendExternalNotification(): bool
+    {
+        $req = Http::withHeaders([
+            'Accept' => 'application/json',
+        ])->post('https://util.devi.tools/api/v1/notify');
+
+        return $req->status() === 204;
     }
 }
